@@ -1,3 +1,4 @@
+from geopy import distance
 from json import dump, load
 from math import radians, cos, sin, asin, sqrt
 
@@ -49,16 +50,19 @@ def measure(santalong, santalat, ordering):
     for i in ordering:
         child = children[i]
         childlong, childlat = child.long, child.lat
-        d += haversine(long, lat, childlong, childlat)
+        # d += haversine(long, lat, childlong, childlat)
+        d += distance.distance((long, lat), (childlong, childlat)).km
         long, lat = childlong, childlat
 
-    d += haversine(long, lat, santalong, santalat)
+    # d += haversine(long, lat, santalong, santalat)
+    d += distance.distance((long, lat), (santalong, santalat)).km
 
     return d
 
 
 def get_ordering(santalong, santalat, group):
-    group.sort(key=lambda child: -haversine(santalong, santalat, child.long, child.lat))
+    # group.sort(key=lambda child: -haversine(santalong, santalat, child.long, child.lat))
+    group.sort(key=lambda child: -distance.distance((santalong, santalat), (child.long, child.lat)).km)
 
     return [g.id for g in group]
 
