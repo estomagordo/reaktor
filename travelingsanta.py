@@ -1,6 +1,8 @@
 from functools import reduce
+from itertools import combinations
 from json import dump, load
 from math import radians, cos, sin, asin, sqrt
+from time import time
 
 from child import Child
 
@@ -58,6 +60,44 @@ def measure(santalong, santalat, ordering):
     return d
 
 
+def powerset(s):
+    ps = [tuple()]
+
+    for n in range(1, len(s) + 1):
+        for c in combinations(s, n):
+            ps.append(c)
+
+    return ps
+
+
+def held_karp(santalong, santalat, group, children):
+    seen = {}
+
+    subsets = powerset([g.id for g in group])[1:]
+
+    for subset in subsets:
+        for id in subset:
+            child = children[id]
+
+            if len(subset) == 1:
+                seen[(subset, id)] = haversine(santalong, santalat, child.long, child.lat)
+            else:
+                best = 10**9
+
+                for x in subset:
+                    if x == id:
+                        continue
+
+                    subsubset = tuple([y for y in subset if y != x])
+                    childx = children[x]
+
+                    best = min(best, seen[(subsubset, x)] + haversine(child.long, child.lat, childx.long, childx.lat))
+
+                seen[(subset, id)] = best
+
+    return min(seen[(subsets[-1], c)] + haversine(santalong, santalat, children[c].long, children[c].lat) for c in group)                   
+
+
 def get_ordering(santalong, santalat, group):
     group.sort(key=lambda child: -haversine(santalong, santalat, child.long, child.lat))
 
@@ -106,7 +146,10 @@ def get_groups(santapacity, santalong, santalat, children):
 
 
 for group in get_groups(santapacity, santalong, santalat, children):
-    ordering = get_ordering(santalong, santalat, group)
+    t = time()
+    # ordering = get_ordering(santalong, santalat, group)
+    ordering = held_karp(santalong, santalat, group, children)
+    print(len(ordering), time()-t)
     out.append(ordering)
     dist += measure(santalong, santalat, ordering)
 
