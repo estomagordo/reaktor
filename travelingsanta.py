@@ -1,7 +1,9 @@
+from collections import Counter
 from functools import reduce
 from itertools import combinations
 from json import dump, load
 from math import radians, cos, sin, asin, sqrt
+from random import shuffle
 from time import time
 
 from child import Child
@@ -43,7 +45,7 @@ out = []
 dist = 0.0
 
 
-def measure(santalong, santalat, ordering):
+def measure(santalong, santalat, ordering, children):
     d = 0.0
 
     long = santalong
@@ -154,15 +156,31 @@ def get_groups(santapacity, santalong, santalat, children):
     return reduce(lambda a,b: a + b, [get_granular_group(santapacity, g) for g in [topleft, topright, botleft, botright]])
 
 
+def random_ordering(santalong, santalat, group, n=10000):
+    best = [10**9, group]
+
+    for _ in range(n):
+        shuffle(group)
+        best = min(best, [measure(santalong, santalat, group, children), group])
+
+    return best[1]
+
+
 groups = get_groups(santapacity, santalong, santalat, children)
+heldkarpcutoff = 16
+sizes = Counter()
 
 for i, group in enumerate(groups):
     print(f'Group {i+1} out of {len(groups)} with {len(group)} elements.')
     t = time()
-    ordering = held_karp(santalong, santalat, group, children)
+    # ordering = get_ordering(santalong, santalat, group) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
+    ordering = random_ordering(santalong, santalat, [g.id for g in group]) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
     print(f'Took {time()-t} seconds.')
+    sizes[len(group)] += 1
     out.append(ordering)
-    dist += measure(santalong, santalat, ordering)
+    dist += measure(santalong, santalat, ordering, children)
+
+print(sizes)
 
 with open('out.txt', 'w') as g:
     for line in out:
