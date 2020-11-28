@@ -80,10 +80,10 @@ def held_karp(santalong, santalat, group, children):
             child = children[c]
 
             if len(subset) == 1:
-                seen[(subset, c)] = haversine(santalong, santalat, child.long, child.lat)
+                seen[(subset, c)] = (haversine(santalong, santalat, child.long, child.lat), [c])
                 continue
 
-            best = 10**9
+            best = (10**9, [])
 
             for x in subset:
                 if x == c:
@@ -92,11 +92,19 @@ def held_karp(santalong, santalat, group, children):
                 subsubset = tuple([y for y in subset if y != c])
                 childx = children[x]
 
-                best = min(best, seen[(subsubset, x)] + haversine(child.long, child.lat, childx.long, childx.lat))
+                best = min(best, (seen[(subsubset, x)][0] + haversine(child.long, child.lat, childx.long, childx.lat), seen[(subsubset, x)][1] + [c]))
 
             seen[(subset, c)] = best
 
-    return min(seen[(subsets[-1], c.id)] + haversine(santalong, santalat, c.long, c.lat) for c in group)                   
+    best = (10**9, [])
+
+    for c in group:
+        lastleg = haversine(santalong, santalat, c.long, c.lat)
+
+        if seen[(subsets[-1], c.id)][0] + lastleg < best[0]:
+            best = (seen[(subsets[-1], c.id)][0] + lastleg, seen[(subsets[-1], c.id)][1])
+    
+    return best[1]
 
 
 def get_ordering(santalong, santalat, group):
@@ -146,11 +154,13 @@ def get_groups(santapacity, santalong, santalat, children):
     return reduce(lambda a,b: a + b, [get_granular_group(santapacity, g) for g in [topleft, topright, botleft, botright]])
 
 
-for group in get_groups(santapacity, santalong, santalat, children):
+groups = get_groups(santapacity, santalong, santalat, children)
+
+for i, group in enumerate(groups):
+    print(f'Group {i+1} out of {len(groups)} with {len(group)} elements.')
     t = time()
-    # ordering = get_ordering(santalong, santalat, group)
     ordering = held_karp(santalong, santalat, group, children)
-    print(len(ordering), time()-t)
+    print(f'Took {time()-t} seconds.')
     out.append(ordering)
     dist += measure(santalong, santalat, ordering)
 
