@@ -76,26 +76,27 @@ def held_karp(santalong, santalat, group, children):
     subsets = powerset([g.id for g in group])[1:]
 
     for subset in subsets:
-        for id in subset:
-            child = children[id]
+        for c in subset:
+            child = children[c]
 
             if len(subset) == 1:
-                seen[(subset, id)] = haversine(santalong, santalat, child.long, child.lat)
-            else:
-                best = 10**9
+                seen[(subset, c)] = haversine(santalong, santalat, child.long, child.lat)
+                continue
 
-                for x in subset:
-                    if x == id:
-                        continue
+            best = 10**9
 
-                    subsubset = tuple([y for y in subset if y != x])
-                    childx = children[x]
+            for x in subset:
+                if x == c:
+                    continue
 
-                    best = min(best, seen[(subsubset, x)] + haversine(child.long, child.lat, childx.long, childx.lat))
+                subsubset = tuple([y for y in subset if y != c])
+                childx = children[x]
 
-                seen[(subset, id)] = best
+                best = min(best, seen[(subsubset, x)] + haversine(child.long, child.lat, childx.long, childx.lat))
 
-    return min(seen[(subsets[-1], c)] + haversine(santalong, santalat, children[c].long, children[c].lat) for c in group)                   
+            seen[(subset, c)] = best
+
+    return min(seen[(subsets[-1], c.id)] + haversine(santalong, santalat, c.long, c.lat) for c in group)                   
 
 
 def get_ordering(santalong, santalat, group):
