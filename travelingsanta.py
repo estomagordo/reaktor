@@ -1,4 +1,4 @@
-from geopy import distance
+from functools import reduce
 from json import dump, load
 from math import radians, cos, sin, asin, sqrt
 
@@ -50,28 +50,25 @@ def measure(santalong, santalat, ordering):
     for i in ordering:
         child = children[i]
         childlong, childlat = child.long, child.lat
-        # d += haversine(long, lat, childlong, childlat)
-        d += distance.distance((long, lat), (childlong, childlat)).km
+        d += haversine(long, lat, childlong, childlat)
         long, lat = childlong, childlat
 
-    # d += haversine(long, lat, santalong, santalat)
-    d += distance.distance((long, lat), (santalong, santalat)).km
+    d += haversine(long, lat, santalong, santalat)
 
     return d
 
 
 def get_ordering(santalong, santalat, group):
-    # group.sort(key=lambda child: -haversine(santalong, santalat, child.long, child.lat))
-    group.sort(key=lambda child: -distance.distance((santalong, santalat), (child.long, child.lat)).km)
+    group.sort(key=lambda child: -haversine(santalong, santalat, child.long, child.lat))
 
     return [g.id for g in group]
 
 
-def get_groups(santapacity, children):
+def get_granular_group(santapacity, children):
     groups = []
     group = [[], 0.0]
 
-    for child in children.values():
+    for child in children:
         if group[1] + child.weight > santapacity:
             groups.append(group[0])
             group = [[child], child.weight]
@@ -85,7 +82,30 @@ def get_groups(santapacity, children):
     return groups
 
 
-for group in get_groups(santapacity, children):
+def get_groups(santapacity, santalong, santalat, children):
+    topleft = []
+    topright = []
+    botleft = []
+    botright = []
+
+    for child in children.values():
+        left = -santalong <= child.long <= santalong
+        up = -santalat <= child.lat <= santalat
+
+        if left:
+            if up:
+                topleft.append(child)
+            else:
+                botleft.append(child)
+        elif up:
+            topright.append(child)
+        else:
+            botright.append(child)
+
+    return reduce(lambda a,b: a + b, [get_granular_group(santapacity, g) for g in [topleft, topright, botleft, botright]])
+
+
+for group in get_groups(santapacity, santalong, santalat, children):
     ordering = get_ordering(santalong, santalat, group)
     out.append(ordering)
     dist += measure(santalong, santalat, ordering)
