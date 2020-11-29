@@ -1,6 +1,6 @@
 from collections import Counter
 from functools import reduce
-from itertools import combinations
+from itertools import combinations, product
 from json import dump, load
 from math import radians, cos, sin, asin, sqrt
 from random import shuffle
@@ -133,6 +133,107 @@ def get_granular_group(santapacity, children):
     return groups
 
 
+def cluster(santapacity, santalong, santalat, children):
+    clusters = { child.id: [child.id, [child], child.weight] for child in children.values() }
+
+    def find(id):
+        path = []
+
+        while clusters[id][0] != id:
+            path.append(id)
+            id = clusters[id][0]
+
+        for p in path:
+            clusters[p][0] = id
+
+        return id
+
+    def union(a, b):
+        anca = find(a)
+        ancb = find(b)
+
+        if anca == ancb:
+            return
+
+        clusters[anca][1] += clusters[ancb][1]
+        clusters[anca][2] += clusters[ancb][2]
+        clusters[ancb][0] = anca
+
+    t = time()
+    edges = []
+    childlist = list(children.values())
+    n = len(childlist)
+
+    for i in range(n-1):
+        a = childlist[i]
+        for j in range(i+1, n):
+            b = childlist[j]
+            edges.append((haversine(a.long, a.lat, b.long, b.lat), a.id, b.id))
+
+    print(f'Found edges in {time()-t} seconds.')
+    t = time()
+    edges.sort()
+    print(f'Sorted them in {time()-t} seconds.')
+
+    while True:
+        t = time()
+        found = False
+
+        for _, a, b in edges:
+            anca = find(a)
+            ancb = find(b)
+
+            if anca == ancb:
+                continue
+
+            if clusters[anca][2] + clusters[ancb][2] >= santapacity:
+                continue
+
+            union(anca, ancb)
+            found = True
+
+        print(f'Round took {time()-t} seconds.')
+
+        if not found:
+            break
+
+    out = []
+
+    for k, v in clusters.items():
+        if k == v[0]:
+            out.append(v[1])
+
+    return out
+
+    connection_made = True
+    while connection_made:
+        print(f'Has {len(clusters)} clusters.')
+        connection_made = False
+        best = [10**9, -1, -1]
+
+        n = len(clusters)
+
+        for i in range(n-1):
+            a = clusters[i]
+
+            for j in range(i+1, n):
+                b = clusters[j]
+
+                if a[1] + b[1] > santapacity:
+                    continue
+
+                dist = min(haversine(pair[0].long, pair[0].lat, pair[1].long, pair[1].lat) for pair in product(a[0], b[0]))
+                best = min(best, [dist, i, j])
+
+        if best[0] < 10**9:
+            clusters[best[1]][0] += clusters[best[2]][0]
+            clusters[best[1]][1] += clusters[best[2]][1]
+            clusters = clusters[:best[1]] + clusters[best[1]+1:]
+            connection_made = True
+
+    return [c[0] for c in clusters]
+
+
 def get_groups(santapacity, santalong, santalat, children):
     topleft = []
     topright = []
@@ -183,15 +284,18 @@ def nearest_neighbour(santalong, santalat, group):
     return path
 
 
-groups = get_groups(santapacity, santalong, santalat, children)
-heldkarpcutoff = 16
+# groups = get_groups(santapacity, santalong, santalat, children)
+print('clustering')
+t = time()
+groups = cluster(santapacity, santalong, santalat, children)
+print(f'took {time()-t} seconds.')
+heldkarpcutoff = 17
 sizes = Counter()
 
 for i, group in enumerate(groups):
     print(f'Group {i+1} out of {len(groups)} with {len(group)} elements.')
     t = time()
     ordering = nearest_neighbour(santalong, santalat, group) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
-    print(f'Took {time()-t} seconds.')
     sizes[len(group)] += 1
     out.append(ordering)
     dist += measure(santalong, santalat, ordering, children)
