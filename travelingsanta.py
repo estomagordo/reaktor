@@ -175,27 +175,19 @@ def cluster(santapacity, santalong, santalat, children):
     edges.sort()
     print(f'Sorted them in {time()-t} seconds.')
 
-    while True:
-        t = time()
-        found = False
+    for _, a, b in edges:
+        anca = find(a)
+        ancb = find(b)
 
-        for _, a, b in edges:
-            anca = find(a)
-            ancb = find(b)
+        if anca == ancb:
+            continue
 
-            if anca == ancb:
-                continue
+        if clusters[anca][2] + clusters[ancb][2] >= santapacity:
+            continue
 
-            if clusters[anca][2] + clusters[ancb][2] >= santapacity:
-                continue
+        union(anca, ancb)
 
-            union(anca, ancb)
-            found = True
-
-        print(f'Round took {time()-t} seconds.')
-
-        if not found:
-            break
+        print(f'Clustering round took {time()-t} seconds.')
 
     out = []
 
@@ -204,7 +196,7 @@ def cluster(santapacity, santalong, santalat, children):
             out.append(v[1])
 
     return out
-    
+
 
 def get_groups(santapacity, santalong, santalat, children):
     topleft = []
