@@ -187,7 +187,7 @@ def cluster(santapacity, santalong, santalat, children):
 
         union(anca, ancb)
 
-        print(f'Clustering round took {time()-t} seconds.')
+    print(f'Clustering round took {time()-t} seconds.')
 
     out = []
 
@@ -252,7 +252,7 @@ t = time()
 groups = cluster(santapacity, santalong, santalat, children)
 print(f'took {time()-t} seconds to produce {len(groups)} groups.')
 t = time()
-heldkarpcutoff = 17
+heldkarpcutoff = 18
 sizes = Counter()
 
 for i, group in enumerate(groups):
