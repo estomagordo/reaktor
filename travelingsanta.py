@@ -166,6 +166,23 @@ def random_ordering(santalong, santalat, group, n=10000):
     return best[1]
 
 
+def nearest_neighbour(santalong, santalat, group):
+    path = []
+
+    while len(path) < len(group):
+        best = [10**9, -1]
+
+        for child in group:
+            if child.id in path:
+                continue
+
+            best = min(best, [haversine(santalong, santalat, child.long, child.lat), child.id])
+
+        path.append(best[1])
+
+    return path
+
+
 groups = get_groups(santapacity, santalong, santalat, children)
 heldkarpcutoff = 16
 sizes = Counter()
@@ -173,8 +190,7 @@ sizes = Counter()
 for i, group in enumerate(groups):
     print(f'Group {i+1} out of {len(groups)} with {len(group)} elements.')
     t = time()
-    # ordering = get_ordering(santalong, santalat, group) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
-    ordering = random_ordering(santalong, santalat, [g.id for g in group]) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
+    ordering = nearest_neighbour(santalong, santalat, group) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
     print(f'Took {time()-t} seconds.')
     sizes[len(group)] += 1
     out.append(ordering)
