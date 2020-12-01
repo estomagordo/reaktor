@@ -8,6 +8,14 @@ from time import time
 
 from child import Child
 
+heldkarpcutoff = 18
+santalong = 29.315278
+santalat = 68.073611
+santapacity = 10**7
+hill_climbing_limit = 300000
+clustering_loops = 10
+clustering_criterion = 8 * 10**6
+
 # Slightly modified from https://stackoverflow.com/questions/4913349/haversine-formula-in-python-bearing-and-distance-between-two-gps-points
 def haversine(lon1, lat1, lon2, lat2):
     """
@@ -37,10 +45,6 @@ def rectangular_distance_sq(lon1, lat1, lon2, lat2):
 
 def distance(lon1, lat1, lon2, lat2):
     return haversine(lon1, lat1, lon2, lat2)
-
-santalong = 29.315278
-santalat = 68.073611
-santapacity = 10**7
 
 children = {}
 
@@ -146,8 +150,8 @@ def get_granular_group(santapacity, children):
     return groups
 
 
-def cluster(santapacity, santalong, santalat, children):
-    clusters = { child.id: [child.id, [child], child.weight] for child in children.values() }
+def cluster_round(santapacity, childlist):
+    clusters = { child.id: [child.id, [child], child.weight] for child in childlist }
 
     def find(id):
         path = []
@@ -174,7 +178,6 @@ def cluster(santapacity, santalong, santalat, children):
 
     t = time()
     edges = []
-    childlist = list(children.values())
     n = len(childlist)
 
     for i in range(n-1):
@@ -209,6 +212,27 @@ def cluster(santapacity, santalong, santalat, children):
             out.append(v[1])
 
     return out
+
+
+def cluster(santapacity, santalong, santalat, children):
+    clusters = []
+    childlist = list(children.values())
+
+    for x in range(clustering_loops):
+        clustered = cluster_round(santapacity, childlist)
+        new_childlist = []
+
+        for cluster in clustered:
+            if x == clustering_loops - 1 or sum(c.weight > clustering_criterion for c in cluster):
+                clusters.append(cluster)
+            else:
+                for c in cluster:
+                    new_childlist.append(c)
+
+        if not new_childlist:
+            break
+
+    return clusters
 
 
 def get_groups(santapacity, santalong, santalat, children):
@@ -253,7 +277,7 @@ def hill_climbing(santalong, santalat, path, children):
     n = len(t)
 
     for p, pd in frontier:
-        if len(frontier) > 300000:
+        if len(frontier) > hill_climbing_limit:
             break
         for i in range(n-1):
             a = p[i]
@@ -298,7 +322,6 @@ t = time()
 groups = cluster(santapacity, santalong, santalat, children)
 print(f'took {time()-t} seconds to produce {len(groups)} groups.')
 t = time()
-heldkarpcutoff = 18
 sizes = Counter()
 
 for i, group in enumerate(groups):
