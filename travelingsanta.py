@@ -25,6 +25,15 @@ def haversine(lon1, lat1, lon2, lat2):
     r = 6378 # Radius of earth in kilometers. Use 3956 for miles
     return c * r
 
+
+def rectangular_distance_sq(lon1, lat1, lon2, lat2):
+    east = lon2 - lon1 if lon2 > lon1 else (180.0 - lon1) + (lon2 + 180.0)
+    west = lon1 - lon2 if lon1 > lon2 else (180.0 - lon2) + (lon1 + 180.0)
+    north = lat2 - lat1 if lat2 > lat1 else (90.0 - lat1) + (lat2 + 90.0)
+    south = lat1 - lat2 if lat1 > lat2 else (90.0 - lat2) + (lat1 + 90.0)
+
+    return min(east, west)**2 + min(north, south)**2
+    
 santalong = 29.315278
 santalat = 68.073611
 santapacity = 10**7
@@ -252,7 +261,7 @@ t = time()
 groups = cluster(santapacity, santalong, santalat, children)
 print(f'took {time()-t} seconds to produce {len(groups)} groups.')
 t = time()
-heldkarpcutoff = 18
+heldkarpcutoff = 13
 sizes = Counter()
 
 for i, group in enumerate(groups):
