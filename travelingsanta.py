@@ -33,7 +33,11 @@ def rectangular_distance_sq(lon1, lat1, lon2, lat2):
     south = lat1 - lat2 if lat1 > lat2 else (90.0 - lat2) + (lat1 + 90.0)
 
     return min(east, west)**2 + min(north, south)**2
-    
+
+
+def distance(lon1, lat1, lon2, lat2):
+    return haversine(lon1, lat1, lon2, lat2)
+
 santalong = 29.315278
 santalat = 68.073611
 santapacity = 10**7
@@ -63,10 +67,10 @@ def measure(santalong, santalat, ordering, children):
     for i in ordering:
         child = children[i]
         childlong, childlat = child.long, child.lat
-        d += haversine(long, lat, childlong, childlat)
+        d += distance(long, lat, childlong, childlat)
         long, lat = childlong, childlat
 
-    d += haversine(long, lat, santalong, santalat)
+    d += distance(long, lat, santalong, santalat)
 
     return d
 
@@ -91,7 +95,7 @@ def held_karp(santalong, santalat, group, children):
             child = children[c]
 
             if len(subset) == 1:
-                seen[(subset, c)] = (haversine(santalong, santalat, child.long, child.lat), [c])
+                seen[(subset, c)] = (distance(santalong, santalat, child.long, child.lat), [c])
                 continue
 
             best = (10**9, [])
@@ -103,14 +107,14 @@ def held_karp(santalong, santalat, group, children):
                 subsubset = tuple([y for y in subset if y != c])
                 childx = children[x]
 
-                best = min(best, (seen[(subsubset, x)][0] + haversine(child.long, child.lat, childx.long, childx.lat), seen[(subsubset, x)][1] + [c]))
+                best = min(best, (seen[(subsubset, x)][0] + distance(child.long, child.lat, childx.long, childx.lat), seen[(subsubset, x)][1] + [c]))
 
             seen[(subset, c)] = best
 
     best = (10**9, [])
 
     for c in group:
-        lastleg = haversine(santalong, santalat, c.long, c.lat)
+        lastleg = distance(santalong, santalat, c.long, c.lat)
 
         if seen[(subsets[-1], c.id)][0] + lastleg < best[0]:
             best = (seen[(subsets[-1], c.id)][0] + lastleg, seen[(subsets[-1], c.id)][1])
@@ -177,7 +181,7 @@ def cluster(santapacity, santalong, santalat, children):
         a = childlist[i]
         for j in range(i+1, n):
             b = childlist[j]
-            edges.append((haversine(a.long, a.lat, b.long, b.lat), a.id, b.id))
+            edges.append((distance(a.long, a.lat, b.long, b.lat), a.id, b.id))
 
     print(f'Found edges in {time()-t} seconds.')
     t = time()
@@ -250,7 +254,7 @@ def nearest_neighbour(santalong, santalat, group):
             if child.id in path:
                 continue
 
-            best = min(best, [haversine(santalong, santalat, child.long, child.lat), child.id])
+            best = min(best, [distance(santalong, santalat, child.long, child.lat), child.id])
 
         path.append(best[1])
 
