@@ -244,21 +244,54 @@ def random_ordering(santalong, santalat, group, n=10000):
     return best[1]
 
 
-def nearest_neighbour(santalong, santalat, group):
+def hill_climbing(santalong, santalat, path, children):
+    t = tuple([p.id for p in path])
+    td = measure(santalong, santalat, t, children)
+    best = [td, t]
+    seen = {t}
+    frontier = [(t,td)]
+    n = len(t)
+
+    for p, pd in frontier:
+        if len(frontier) > 1000:
+            break
+        for i in range(n-1):
+            a = p[i]
+            for j in range(i+1, n):
+                b = p[j]
+                pl = list(p)
+                pdelta = tuple(pl[:i] + [b] + pl[i+1:j] + [a] + pl[j+1:])
+                
+                if pdelta in seen:
+                    continue
+
+                d = measure(santalong, santalat, pdelta, children)
+
+                if d < pd:
+                    seen.add(pdelta)                    
+                    frontier.append((pdelta, d))
+                    best = min(best, [d, pdelta])
+
+    print(f'Hill climbed {len(frontier)} alternatives.')
+    
+    return best[1]
+
+
+def nearest_neighbour(santalong, santalat, group, children):
     path = []
 
     while len(path) < len(group):
-        best = [10**9, -1]
+        best = [10**9, None]
 
         for child in group:
-            if child.id in path:
+            if child in path:
                 continue
 
-            best = min(best, [distance(santalong, santalat, child.long, child.lat), child.id])
+            best = min(best, [distance(santalong, santalat, child.long, child.lat), child])
 
         path.append(best[1])
 
-    return path
+    return hill_climbing(santalong, santalat, path, children)
 
 print('clustering')
 t = time()
@@ -269,13 +302,14 @@ heldkarpcutoff = 13
 sizes = Counter()
 
 for i, group in enumerate(groups):
+    print(f'Routing group {i+1} of {len(groups)} (size {len(group)}), using {"Held Karp" if len(group) <= heldkarpcutoff else "Nearest neighbour and hill climbing"}')
     t = time()
-    ordering = nearest_neighbour(santalong, santalat, group) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
+    ordering = nearest_neighbour(santalong, santalat, group, children) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
     sizes[len(group)] += 1
     out.append(ordering)
     dist += measure(santalong, santalat, ordering, children)
+    print(f'Took {time()-t} seconds.')
 
-print(f'Routed in {time()-t} seconds.')
 print(sizes)
 
 with open('out.txt', 'w') as g:
