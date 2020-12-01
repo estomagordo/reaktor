@@ -253,7 +253,7 @@ def hill_climbing(santalong, santalat, path, children):
     n = len(t)
 
     for p, pd in frontier:
-        if len(frontier) > 1000:
+        if len(frontier) > 300000:
             break
         for i in range(n-1):
             a = p[i]
@@ -298,7 +298,7 @@ t = time()
 groups = cluster(santapacity, santalong, santalat, children)
 print(f'took {time()-t} seconds to produce {len(groups)} groups.')
 t = time()
-heldkarpcutoff = 13
+heldkarpcutoff = 18
 sizes = Counter()
 
 for i, group in enumerate(groups):
