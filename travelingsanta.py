@@ -229,6 +229,8 @@ def cluster(santapacity, santalong, santalat, children):
                 for c in cluster:
                     new_childlist.append(c)
 
+        print(f'After clustering iteration {x+1} of {clustering_loops}, {len(clusters)} have been found.')
+        
         if not new_childlist:
             break
 
