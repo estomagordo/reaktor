@@ -8,12 +8,12 @@ from time import time
 
 from child import Child
 
-heldkarpcutoff = 18
+heldkarpcutoff = 19
 santalong = 29.315278
 santalat = 68.073611
 santapacity = 10**7
-hill_climbing_limit = 300000
-clustering_loops = 10
+hill_climbing_limit = 10**4
+clustering_loops = 1
 clustering_criterion = 8 * 10**6
 
 # Slightly modified from https://stackoverflow.com/questions/4913349/haversine-formula-in-python-bearing-and-distance-between-two-gps-points
@@ -223,7 +223,7 @@ def cluster(santapacity, santalong, santalat, children):
         new_childlist = []
 
         for cluster in clustered:
-            if x == clustering_loops - 1 or sum(c.weight > clustering_criterion for c in cluster):
+            if x == clustering_loops - 1 or sum(c.weight for c in cluster) > clustering_criterion:
                 clusters.append(cluster)
             else:
                 for c in cluster:
@@ -233,6 +233,8 @@ def cluster(santapacity, santalong, santalat, children):
         
         if not new_childlist:
             break
+
+        childlist = new_childlist
 
     return clusters
 
@@ -298,7 +300,7 @@ def hill_climbing(santalong, santalat, path, children):
                     frontier.append((pdelta, d))
                     best = min(best, [d, pdelta])
 
-    print(f'Hill climbed {len(frontier)} alternatives.')
+    print(f'Hill climbed {len(frontier)} alternatives. Ending up at { 100.0 * best[0] / td}% of the original.')
     
     return best[1]
 
