@@ -8,13 +8,15 @@ from time import time
 
 from child import Child
 
-heldkarpcutoff = 19
+heldkarpcutoff = 18
 santalong = 29.315278
 santalat = 68.073611
 santapacity = 10**7
-hill_climbing_limit = 10**4
+hill_climbing_limit = 10**5
 clustering_loops = 1
-clustering_criterion = 8 * 10**6
+clustering_criterion = 55 * 10**5
+re_clustering_criterion = 95 * 10**5
+random_clustering_attempts = 10**5
 
 # Slightly modified from https://stackoverflow.com/questions/4913349/haversine-formula-in-python-bearing-and-distance-between-two-gps-points
 def haversine(lon1, lat1, lon2, lat2):
@@ -90,6 +92,23 @@ def powerset(s):
 
 
 def held_karp(santalong, santalat, group, children):
+    # Comparing with nearest neighbour without hill climbing first
+
+    path = []
+
+    while len(path) < len(group):
+        best = [10**9, None]
+
+        for child in group:
+            if child in path:
+                continue
+
+            best = min(best, [distance(santalong, santalat, child.long, child.lat), child])
+
+        path.append(best[1])
+
+    nndist = measure(santalong, santalat, [c.id for c in path], children)
+
     seen = {}
 
     subsets = powerset([g.id for g in group])[1:]
@@ -122,6 +141,8 @@ def held_karp(santalong, santalat, group, children):
 
         if seen[(subsets[-1], c.id)][0] + lastleg < best[0]:
             best = (seen[(subsets[-1], c.id)][0] + lastleg, seen[(subsets[-1], c.id)][1])
+    
+    print(f'HK optimal {100.0 * measure(santalong, santalat, best[1], children) / nndist}% of simple nearest neighbour.')
     
     return best[1]
 
@@ -217,25 +238,53 @@ def cluster_round(santapacity, childlist):
 def cluster(santapacity, santalong, santalat, children):
     clusters = []
     childlist = list(children.values())
+    
+    t = time()
+    clustered = cluster_round(santapacity, childlist)
+    childlist = []
 
-    for x in range(clustering_loops):
-        clustered = cluster_round(santapacity, childlist)
-        new_childlist = []
+    for cluster in clustered:
+        if sum(c.weight for c in cluster) > clustering_criterion:
+            clusters.append(cluster)
+        else:
+            for c in cluster:
+                childlist.append(c)
 
-        for cluster in clustered:
-            if x == clustering_loops - 1 or sum(c.weight for c in cluster) > clustering_criterion:
-                clusters.append(cluster)
-            else:
-                for c in cluster:
-                    new_childlist.append(c)
+    print(f'After clustering by proximity, {len(clusters)} have been found. {len(childlist)} remain. This took {time()-t} seconds.')
 
-        print(f'After clustering iteration {x+1} of {clustering_loops}, {len(clusters)} have been found.')
-        
-        if not new_childlist:
+    t = time()
+
+    for x in range(random_clustering_attempts):
+        if x > 0 and x % 10000 == 0:
+            print(f'Random clustering attempt {x}.')
+
+        if not childlist:
             break
 
-        childlist = new_childlist
+        shuffle(childlist)
 
+        clusterattempt = []
+        clusterweight = 0.0
+        childids = set()
+
+        for child in childlist:
+            if clusterweight + child.weight < santapacity:
+                clusterattempt.append(child)
+                clusterweight += child.weight
+                childids.add(child.id)
+
+        if clusterweight > re_clustering_criterion:
+            clusters.append(clusterattempt)
+            childlist = [c for c in childlist if c.id not in childids]
+            print(f'cluster of weight {clusterweight} and size {len(clusterattempt)} found!')
+
+    print(f'Random clustering took {time()-t} seconds. {len(childlist)} children remain.')
+    
+    if childlist:
+        t = time()
+        clusters += cluster_round(santapacity, childlist)
+        print(f'Final clustering took {time()-t} seconds.')
+    
     return clusters
 
 
@@ -324,35 +373,24 @@ def nearest_neighbour(santalong, santalat, group, children):
 print('clustering')
 t = time()
 groups = cluster(santapacity, santalong, santalat, children)
-over = 0
-under = 0
-for g in groups:
-    n = len(g)
-    w = sum(c.weight for c in g)
-    if w > clustering_criterion:
-        over += n
-    else:
-        under += n
-        print(n, w)
-print(clustering_criterion, under, over)
 
-# print(f'took {time()-t} seconds to produce {len(groups)} groups.')
-# t = time()
-# sizes = Counter()
+print(f'took {time()-t} seconds to produce {len(groups)} groups.')
+t = time()
+sizes = Counter()
 
-# for i, group in enumerate(groups):
-#     print(f'Routing group {i+1} of {len(groups)} (size {len(group)}), using {"Held Karp" if len(group) <= heldkarpcutoff else "Nearest neighbour and hill climbing"}')
-#     t = time()
-#     ordering = nearest_neighbour(santalong, santalat, group, children) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
-#     sizes[len(group)] += 1
-#     out.append(ordering)
-#     dist += measure(santalong, santalat, ordering, children)
-#     print(f'Took {time()-t} seconds.')
+for i, group in enumerate(groups):
+    print(f'Routing group {i+1} of {len(groups)} (size {len(group)}), using {"Held Karp" if len(group) <= heldkarpcutoff else "Nearest neighbour and hill climbing"}')
+    t = time()
+    ordering = nearest_neighbour(santalong, santalat, group, children) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
+    sizes[len(group)] += 1
+    out.append(ordering)
+    dist += measure(santalong, santalat, ordering, children)
+    print(f'Took {time()-t} seconds.')
 
-# print(sizes)
+print(sizes)
 
-# with open('out.txt', 'w') as g:
-#     for line in out:
-#         g.write('; '.join(line) + '\n')
+with open('out.txt', 'w') as g:
+    for line in out:
+        g.write('; '.join(line) + '\n')
 
-# print(dist, dist / 1000.0, len(out))
+print(dist / 1000.0, len(out))
