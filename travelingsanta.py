@@ -324,23 +324,35 @@ def nearest_neighbour(santalong, santalat, group, children):
 print('clustering')
 t = time()
 groups = cluster(santapacity, santalong, santalat, children)
-print(f'took {time()-t} seconds to produce {len(groups)} groups.')
-t = time()
-sizes = Counter()
+over = 0
+under = 0
+for g in groups:
+    n = len(g)
+    w = sum(c.weight for c in g)
+    if w > clustering_criterion:
+        over += n
+    else:
+        under += n
+        print(n, w)
+print(clustering_criterion, under, over)
 
-for i, group in enumerate(groups):
-    print(f'Routing group {i+1} of {len(groups)} (size {len(group)}), using {"Held Karp" if len(group) <= heldkarpcutoff else "Nearest neighbour and hill climbing"}')
-    t = time()
-    ordering = nearest_neighbour(santalong, santalat, group, children) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
-    sizes[len(group)] += 1
-    out.append(ordering)
-    dist += measure(santalong, santalat, ordering, children)
-    print(f'Took {time()-t} seconds.')
+# print(f'took {time()-t} seconds to produce {len(groups)} groups.')
+# t = time()
+# sizes = Counter()
 
-print(sizes)
+# for i, group in enumerate(groups):
+#     print(f'Routing group {i+1} of {len(groups)} (size {len(group)}), using {"Held Karp" if len(group) <= heldkarpcutoff else "Nearest neighbour and hill climbing"}')
+#     t = time()
+#     ordering = nearest_neighbour(santalong, santalat, group, children) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
+#     sizes[len(group)] += 1
+#     out.append(ordering)
+#     dist += measure(santalong, santalat, ordering, children)
+#     print(f'Took {time()-t} seconds.')
 
-with open('out.txt', 'w') as g:
-    for line in out:
-        g.write('; '.join(line) + '\n')
+# print(sizes)
 
-print(dist, dist / 1000.0, len(out))
+# with open('out.txt', 'w') as g:
+#     for line in out:
+#         g.write('; '.join(line) + '\n')
+
+# print(dist, dist / 1000.0, len(out))
