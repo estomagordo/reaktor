@@ -2,19 +2,19 @@ from collections import Counter
 from functools import reduce
 from itertools import combinations, product
 from json import dump, load
-from math import radians, cos, sin, asin, sqrt
+from math import radians, cos, sin, asin, sqrt, acos
 from random import shuffle
 from time import time
 
 from child import Child
 
-heldkarpcutoff = 18
+heldkarpcutoff = 19
 santalong = 29.315278
 santalat = 68.073611
 santapacity = 10**7
-hill_climbing_limit = 10**5
+hill_climbing_limit = 2 * 10**5
 clustering_loops = 1
-clustering_criterion = 55 * 10**5
+clustering_criterion = 35 * 10**5
 re_clustering_criterion = 95 * 10**5
 random_clustering_attempts = 10**5
 
@@ -36,6 +36,17 @@ def haversine(lon1, lat1, lon2, lat2):
     return c * r
 
 
+def wikimeasure(long1, lat1, long2, lat2):
+    r = 6378
+
+    lo1, la1, lo2, la2 = map(radians, (long1, lat1, long2, lat2))
+    
+    dlong = abs(lo1-lo2)
+    dsigma = acos(sin(la1) * sin(la2) + cos(la1) * cos(la2) * cos(dlong))
+
+    return dsigma * r
+
+
 def rectangular_distance_sq(lon1, lat1, lon2, lat2):
     east = lon2 - lon1 if lon2 > lon1 else (180.0 - lon1) + (lon2 + 180.0)
     west = lon1 - lon2 if lon1 > lon2 else (180.0 - lon2) + (lon1 + 180.0)
@@ -46,7 +57,7 @@ def rectangular_distance_sq(lon1, lat1, lon2, lat2):
 
 
 def distance(lon1, lat1, lon2, lat2):
-    return haversine(lon1, lat1, lon2, lat2)
+    return wikimeasure(lon1, lat1, lon2, lat2)
 
 children = {}
 
