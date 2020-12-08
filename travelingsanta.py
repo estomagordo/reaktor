@@ -8,7 +8,7 @@ from time import time
 
 from child import Child
 
-heldkarpcutoff = 19
+heldkarpcutoff = 21
 santalong = 29.315278
 santalat = 68.073611
 santapacity = 10**7
@@ -381,27 +381,50 @@ def nearest_neighbour(santalong, santalat, group, children):
 
     return hill_climbing(santalong, santalat, path, children)
 
-print('clustering')
-t = time()
-groups = cluster(santapacity, santalong, santalat, children)
 
-print(f'took {time()-t} seconds to produce {len(groups)} groups.')
-t = time()
-sizes = Counter()
+out = []
 
-for i, group in enumerate(groups):
-    print(f'Routing group {i+1} of {len(groups)} (size {len(group)}), using {"Held Karp" if len(group) <= heldkarpcutoff else "Nearest neighbour and hill climbing"}')
-    t = time()
-    ordering = nearest_neighbour(santalong, santalat, group, children) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
-    sizes[len(group)] += 1
-    out.append(ordering)
-    dist += measure(santalong, santalat, ordering, children)
-    print(f'Took {time()-t} seconds.')
+with open('out.txt') as f:
+    i = 1
 
-print(sizes)
+    for line in f.readlines():
+        items = line.split()
+        
+        if len(items) in [20, 21]:
+            group = []            
+
+            for item in items:
+                group.append(children[item[:-1] if item[-1] == ';' else item])
+
+            print(f'Routing group {i} (size {len(group)}), using Held Karp')
+            t = time()
+            ordering = held_karp(santalong, santalat, group, children)                
+            out.append(ordering)                
+            print(f'Took {time()-t} seconds.')
+        else:
+            out.append(line)
+
+        i =+ 1
+
+# print('clustering')
+# t = time()
+# groups = cluster(santapacity, santalong, santalat, children)
+
+# print(f'took {time()-t} seconds to produce {len(groups)} groups.')
+# t = time()
+# sizes = Counter()
+
+# for i, group in enumerate(groups):
+#     print(f'Routing group {i+1} of {len(groups)} (size {len(group)}), using {"Held Karp" if len(group) <= heldkarpcutoff else "Nearest neighbour and hill climbing"}')
+#     t = time()
+#     ordering = nearest_neighbour(santalong, santalat, group, children) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
+#     sizes[len(group)] += 1
+#     out.append(ordering)
+#     dist += measure(santalong, santalat, ordering, children)
+#     print(f'Took {time()-t} seconds.')
+
+# print(sizes)
 
 with open('out.txt', 'w') as g:
     for line in out:
         g.write('; '.join(line) + '\n')
-
-print(dist / 1000.0, len(out))
