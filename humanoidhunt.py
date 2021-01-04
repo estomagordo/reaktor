@@ -1,4 +1,5 @@
 from collections import Counter
+from itertools import combinations
 
 
 def parsebyte(byte):
@@ -57,3 +58,68 @@ while True:
     base += c
 
 print(base)
+
+neuralstrands = []
+
+with open('neuralstrands.txt') as f:
+    for line in f:
+        neuralstrands.append(line.rstrip())
+
+safe = set()
+walls = set()
+finish = set()
+startx = -1
+starty = -1
+
+for strand in neuralstrands:
+    if ' ' in strand:
+        coords, path = strand.split()
+        x, y = map(int, coords.split(','))
+        steps = path.split(',')
+
+        for step in steps:
+            if step == 'F':
+                finish.add((x, y))
+            elif step == 'S':
+                startx = x
+                starty = y
+            elif step == 'X':
+                walls.add((x, y))
+            else:
+                safe.add((x, y))
+
+                if step == 'D':
+                    y += 1
+                elif step == 'U':
+                    y -= 1
+                elif step == 'R':
+                    x += 1
+                else:
+                    x -= 1
+
+        if steps[-1] in 'DURL':
+            safe.add((x, y))
+    else:
+        x, y = map(int, strand.split(','))
+        safe.add((x, y))
+
+seen = {(startx, starty)}
+frontier = [(startx, starty, '')]
+
+for x, y, path in frontier:
+    if (x, y) in finish:
+        print(path)
+        break
+
+    if (x+1, y) not in walls and (x+1, y) not in seen:
+        seen.add((x+1, y))
+        frontier.append((x+1, y, path + 'R'))
+    if (x-1, y) not in walls and (x-1, y) not in seen:
+        seen.add((x-1, y))
+        frontier.append((x-1, y, path + 'L'))
+    if (x, y+1) not in walls and (x, y+1) not in seen:
+        seen.add((x, y+1))
+        frontier.append((x, y+1, path + 'D'))
+    if (x, y-1) not in walls and (x, y-1) not in seen:
+        seen.add((x, y-1))
+        frontier.append((x, y-1, path + 'U'))
