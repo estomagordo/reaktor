@@ -1,3 +1,6 @@
+from collections import Counter
+
+
 def parsebyte(byte):
     return int(''.join(byte), 2)
 
@@ -33,3 +36,24 @@ with open('humanoidhunt.txt') as f:
         channels.append(line.rstrip())
 
 print(''.join(map(interpret, channels)))
+
+signal2 = ''
+
+with open('signal2.txt') as f:
+    signal2 = f.readline().rstrip()
+
+startcounter = Counter(signal2)
+c = startcounter.most_common(1)[0][0]
+
+base = c
+
+while True:
+    counter = Counter([signal2[x+1] for x in range(len(signal2)-1) if signal2[x] == c])
+    c = counter.most_common(1)[0][0]
+
+    if c == ';':
+        break
+
+    base += c
+
+print(base)
