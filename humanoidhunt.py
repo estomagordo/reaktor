@@ -108,7 +108,7 @@ frontier = [(startx, starty, '')]
 closest = 10**10
 
 for x, y, path in frontier:
-    d = min(abs(f[0]-1) + abs(f[1]-y) for f in finish)
+    d = min(abs(f[0]-x) + abs(f[1]-y) for f in finish)
     if d < closest:
         print(d, x, y)
         closest = d
@@ -116,16 +116,16 @@ for x, y, path in frontier:
         print(path)
         break
 
-    if (x+1, y) in safe and (x+1, y) not in seen:
+    if (x+1, y) in safe|finish and (x+1, y) not in seen:
         seen.add((x+1, y))
         frontier.append((x+1, y, path + 'R'))
-    if (x-1, y) in safe and (x-1, y) not in seen:
+    if (x-1, y) in safe|finish and (x-1, y) not in seen:
         seen.add((x-1, y))
         frontier.append((x-1, y, path + 'L'))
-    if (x, y+1) in safe and (x, y+1) not in seen:
+    if (x, y+1) in safe|finish and (x, y+1) not in seen:
         seen.add((x, y+1))
         frontier.append((x, y+1, path + 'D'))
-    if (x, y-1) in safe and (x, y-1) not in seen:
+    if (x, y-1) in safe|finish and (x, y-1) not in seen:
         seen.add((x, y-1))
         frontier.append((x, y-1, path + 'U'))
 
