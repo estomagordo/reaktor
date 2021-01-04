@@ -8,12 +8,12 @@ from time import time
 
 from child import Child
 
-heldkarpcutoff = 18
+heldkarpcutoff = 13
 santalong = 29.315278
 santalat = 68.073611
 santapacity = 10**7
-hill_climbing_limit = 300000
-clustering_loops = 10
+hill_climbing_limit = 1000
+clustering_loops = 2
 clustering_criterion = 8 * 10**6
 
 # Slightly modified from https://stackoverflow.com/questions/4913349/haversine-formula-in-python-bearing-and-distance-between-two-gps-points
@@ -150,6 +150,10 @@ def get_granular_group(santapacity, children):
     return groups
 
 
+def other_clustering(santapacity, childlist):
+    # cue knapsack
+
+
 def cluster_round(santapacity, childlist):
     clusters = { child.id: [child.id, [child], child.weight] for child in childlist }
 
@@ -219,6 +223,9 @@ def cluster(santapacity, santalong, santalat, children):
     childlist = list(children.values())
 
     for x in range(clustering_loops):
+        if x == clustering_loops-1:
+            clusters.append(other_clustering(santapacity, childlist))
+            break
         clustered = cluster_round(santapacity, childlist)
         new_childlist = []
 
@@ -298,7 +305,7 @@ def hill_climbing(santalong, santalat, path, children):
                     frontier.append((pdelta, d))
                     best = min(best, [d, pdelta])
 
-    print(f'Hill climbed {len(frontier)} alternatives.')
+    # print(f'Hill climbed {len(frontier)} alternatives.')
     
     return best[1]
 
@@ -327,13 +334,13 @@ t = time()
 sizes = Counter()
 
 for i, group in enumerate(groups):
-    print(f'Routing group {i+1} of {len(groups)} (size {len(group)}), using {"Held Karp" if len(group) <= heldkarpcutoff else "Nearest neighbour and hill climbing"}')
+    # print(f'Routing group {i+1} of {len(groups)} (size {len(group)}), using {"Held Karp" if len(group) <= heldkarpcutoff else "Nearest neighbour and hill climbing"}')
     t = time()
     ordering = nearest_neighbour(santalong, santalat, group, children) if len(group) > heldkarpcutoff else held_karp(santalong, santalat, group, children)
     sizes[len(group)] += 1
     out.append(ordering)
     dist += measure(santalong, santalat, ordering, children)
-    print(f'Took {time()-t} seconds.')
+    # print(f'Took {time()-t} seconds.')
 
 print(sizes)
 
