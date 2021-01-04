@@ -105,13 +105,8 @@ for strand in neuralstrands:
 
 seen = {(startx, starty)}
 frontier = [(startx, starty, '')]
-closest = 10**10
 
 for x, y, path in frontier:
-    d = min(abs(f[0]-x) + abs(f[1]-y) for f in finish)
-    if d < closest:
-        print(d, x, y)
-        closest = d
     if (x, y) in finish:
         print(path)
         break
@@ -128,18 +123,3 @@ for x, y, path in frontier:
     if (x, y-1) in safe|finish and (x, y-1) not in seen:
         seen.add((x, y-1))
         frontier.append((x, y-1, path + 'U'))
-
-print(len(seen))
-print(walls)
-print(finish)
-minx = min(p[0] for p in {(startx,starty)}|walls|finish)
-maxx = max(p[0] for p in {(startx,starty)}|walls|finish)
-miny = min(p[1] for p in {(startx,starty)}|walls|finish)
-maxy = max(p[1] for p in {(startx,starty)}|walls|finish)
-print(minx, maxx, miny, maxy)
-
-for y in range(miny, maxy+1):
-    row = []
-    for x in range(minx, maxx+1):
-        row.append('#' if (x, y) in walls else 'S' if x == startx and y == starty else 'F' if (x, y) in finish else '.' if (x, y) in safe else ' ')
-    print(''.join(row))
