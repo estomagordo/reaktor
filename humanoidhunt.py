@@ -111,15 +111,17 @@ for x, y, path in frontier:
         print(path)
         break
 
-    if (x+1, y) not in walls and (x+1, y) not in seen:
+    if (x+1, y) in safe and (x+1, y) not in seen:
         seen.add((x+1, y))
         frontier.append((x+1, y, path + 'R'))
-    if (x-1, y) not in walls and (x-1, y) not in seen:
+    if (x-1, y) in safe and (x-1, y) not in seen:
         seen.add((x-1, y))
         frontier.append((x-1, y, path + 'L'))
-    if (x, y+1) not in walls and (x, y+1) not in seen:
+    if (x, y+1) in safe and (x, y+1) not in seen:
         seen.add((x, y+1))
         frontier.append((x, y+1, path + 'D'))
-    if (x, y-1) not in walls and (x, y-1) not in seen:
+    if (x, y-1) in safe and (x, y-1) not in seen:
         seen.add((x, y-1))
         frontier.append((x, y-1, path + 'U'))
+
+print(len(seen))
